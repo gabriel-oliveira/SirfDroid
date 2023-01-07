@@ -1,2 +1,2 @@
 # UsbGPS
-Playing with USB Sirf-GPS in Android
+Playing with USB Sirf GPS in Android
