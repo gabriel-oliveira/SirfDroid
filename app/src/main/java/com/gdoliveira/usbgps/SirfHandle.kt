@@ -8,9 +8,10 @@ class SirfHandle() {
     var byteArrayReceived: ByteArray? = null
 
 
-    fun msgReceived(rec: String): List<String> {
+    fun msgReceived(rec: String): Pair<List<String>, List<Long>?> {
 //        byteArrayReceived = byteArrayReceived?.plus(rec)
         var msgList = arrayListOf<String>()
+        var data_msg2: List<Long>? = null
         msgRec += rec
 
         while (true){
@@ -33,7 +34,7 @@ class SirfHandle() {
 
                     when (msgid){
                         "02" -> {
-                            msg2_parser(newMsg)
+                            data_msg2 = msg2_parser(newMsg)
                         }
                         "28" -> {
 
@@ -51,7 +52,7 @@ class SirfHandle() {
             }
         }
 
-        return msgList
+        return Pair(msgList, data_msg2)
 
     }
 
@@ -65,14 +66,18 @@ class SirfHandle() {
         }
     }
 
-    fun msg2_parser(SirfMsg: String){
+    fun msg2_parser(SirfMsg: String): List<Long>{
         val X = hex2dec4S(SirfMsg.substring(11,18))
         val Y = hex2dec4S(SirfMsg.substring(19,26) )
         val Z = hex2dec4S(SirfMsg.substring(27,34) )
         val week = SirfMsg.substring(53,56).toLong(radix = 16)
-        val tow = (SirfMsg.substring(57, 64).toLong(radix = 16).toDouble() / 100.0).roundToInt()
+        val tow = SirfMsg.substring(57, 64).toLong(radix = 16)
+//        val tow = (SirfMsg.substring(57, 64).toLong(radix = 16).toDouble() / 100.0).roundToInt()
         val SVinFix = SirfMsg.substring(65,66).toLong(radix = 16)
+        Log.i("Sirf MID 2",SirfMsg)
         Log.i("Sirf MID 2","X=$X - Y=$Y - Z=$Z - week=$week - tow=$tow -SVinFix=$SVinFix")
+
+        return listOf<Long>(X, Y, Z, week, tow, SVinFix)
     }
 }
 

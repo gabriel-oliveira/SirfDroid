@@ -32,6 +32,7 @@ class MainActivity : AppCompatActivity() {
     var tcpServer: TcpServer? = null
     var sirfHandle = SirfHandle()
     var receivedMsgsId = arrayListOf<Int>()
+    var data_msg2: List<Long>? = null
 
     private val ACTION_USB_PERMISSION = "com.gdoliveira.usbgps.USB_PERMISSION"
 
@@ -213,12 +214,14 @@ class MainActivity : AppCompatActivity() {
                     }
                     "SIRF 115200" -> {
                         msg = rec.toHexString()
-                        sirfHandle.msgReceived(msg).forEach {
+                        var (msgList, msg2) = sirfHandle.msgReceived(msg)
+                        msgList.forEach {
 //                            Log.i("GPS", it)
                             if (it.toInt(16) !in receivedMsgsId) {
                                 receivedMsgsId.add(it.toInt(16))
                             }
                         }
+                        data_msg2 = msg2
                     }
                     else -> {
                         Toast.makeText(this, "Erro ao definir NMEA x Sirf em ReadSyncData", Toast.LENGTH_LONG).show()
@@ -249,6 +252,9 @@ class MainActivity : AppCompatActivity() {
 ////                                resultTextView.append("$it, ")
 //                                Log.i("Sirf MSG", "MSG_ID: $it")
 //                            }
+
+                            updateCoordTextView(data_msg2)
+
                         }
                         else -> {
                             Log.e("GPS", "Erro ao definir NMEA x Sirf em ReadSyncData display result")
@@ -259,6 +265,25 @@ class MainActivity : AppCompatActivity() {
             } else {
                 break
             }
+        }
+    }
+
+    private fun updateCoordTextView(data: List<Long>?){
+
+        if (data != null) {
+            val coordXTextView: TextView = findViewById(R.id.textView5)
+            val coordYTextView: TextView = findViewById(R.id.textView6)
+            val coordZTextView: TextView = findViewById(R.id.textView7)
+            val weekTextView: TextView = findViewById(R.id.textView11)
+            val towTextView: TextView = findViewById(R.id.textView12)
+            val svinfixTextView: TextView = findViewById(R.id.textView13)
+
+            coordXTextView.text = data!![0].toString()
+            coordYTextView.text = data!![1].toString()
+            coordZTextView.text = data!![2].toString()
+            weekTextView.text = data!![3].toString()
+            towTextView.text = data!![4].toString()
+            svinfixTextView.text = data!![5].toString()
         }
     }
 
