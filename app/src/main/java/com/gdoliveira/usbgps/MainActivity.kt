@@ -245,10 +245,10 @@ class MainActivity : AppCompatActivity() {
 
                             var receivedMsgsIdAux = arrayListOf<Int>()
                             receivedMsgsIdAux.addAll(receivedMsgsId)
-                            receivedMsgsIdAux.forEach{
-//                                resultTextView.append("$it, ")
-                                Log.i("Sirf MSG", "MSG_ID: $it")
-                            }
+//                            receivedMsgsIdAux.forEach{
+////                                resultTextView.append("$it, ")
+//                                Log.i("Sirf MSG", "MSG_ID: $it")
+//                            }
                         }
                         else -> {
                             Log.e("GPS", "Erro ao definir NMEA x Sirf em ReadSyncData display result")

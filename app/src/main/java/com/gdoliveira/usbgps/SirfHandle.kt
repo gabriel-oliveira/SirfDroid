@@ -1,6 +1,7 @@
 package com.gdoliveira.usbgps
 
 import android.util.Log
+import kotlin.math.roundToInt
 
 class SirfHandle() {
     var msgRec: String? = null
@@ -26,7 +27,20 @@ class SirfHandle() {
 //                Log.i("Sirf Msg", newMsg)
 
                 if ( checkSirfMsg(newMsg) ) {
-                    msgList.add(msgRec!!.substring(startIndexMsg + 12, startIndexMsg + 14)) // MSG ID
+
+                    val msgid = msgRec!!.substring(startIndexMsg + 12, startIndexMsg + 14)
+                    msgList.add( msgid )
+
+                    when (msgid){
+                        "02" -> {
+                            msg2_parser(newMsg)
+                        }
+                        "28" -> {
+
+                        }
+
+                    }
+
                 } else {
                     Log.e("Check Sirf MSG", "$newMsg")
                 }
@@ -50,6 +64,16 @@ class SirfHandle() {
             false
         }
     }
+
+    fun msg2_parser(SirfMsg: String){
+        val X = hex2dec4S(SirfMsg.substring(11,18))
+        val Y = hex2dec4S(SirfMsg.substring(19,26) )
+        val Z = hex2dec4S(SirfMsg.substring(27,34) )
+        val week = SirfMsg.substring(53,56).toLong(radix = 16)
+        val tow = (SirfMsg.substring(57, 64).toLong(radix = 16).toDouble() / 100.0).roundToInt()
+        val SVinFix = SirfMsg.substring(65,66).toLong(radix = 16)
+        Log.i("Sirf MID 2","X=$X - Y=$Y - Z=$Z - week=$week - tow=$tow -SVinFix=$SVinFix")
+    }
 }
 
 // ByteArray to HexString
@@ -60,4 +84,15 @@ public fun String?.indexesOf(substr: String, ignoreCase: Boolean = true): List<I
         val regex = if (ignoreCase) Regex(substr, RegexOption.IGNORE_CASE) else Regex(substr)
         regex.findAll(this).map { it.range.start }.toList()
     } ?: emptyList()
+}
+
+public fun hex2dec4S( input_args: String ): Long {
+//    hex2dec4S converte uma string hexadecimal negativa de 4 bits em um numero decimal
+
+    if (input_args[1].equals("F")) {
+        return (input_args.toLong(radix = 16) - "FFFFFFFF".toLong(radix = 16) - 1)
+    }
+    else {
+        return input_args.toLong(radix = 16)
+    }
 }
