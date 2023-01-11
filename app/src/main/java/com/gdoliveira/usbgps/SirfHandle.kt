@@ -1,7 +1,7 @@
 package com.gdoliveira.usbgps
 
 import android.util.Log
-import kotlin.math.roundToInt
+import kotlin.math.roundToLong
 
 class SirfHandle() {
     var msgRec: String? = null
@@ -67,16 +67,14 @@ class SirfHandle() {
     }
 
     fun msg2_parser(SirfMsg: String): List<Long>{
-        val X = hex2dec4S(SirfMsg.substring(11,18))
-        val Y = hex2dec4S(SirfMsg.substring(19,26) )
-        val Z = hex2dec4S(SirfMsg.substring(27,34) )
-        val week = SirfMsg.substring(53,56).toLong(radix = 16)
-        val tow = SirfMsg.substring(57, 64).toLong(radix = 16)
-//        val tow = (SirfMsg.substring(57, 64).toLong(radix = 16).toDouble() / 100.0).roundToInt()
-        val SVinFix = SirfMsg.substring(65,66).toLong(radix = 16)
-        Log.i("Sirf MID 2",SirfMsg)
-        Log.i("Sirf MID 2","X=$X - Y=$Y - Z=$Z - week=$week - tow=$tow -SVinFix=$SVinFix")
-
+        val X = hex2dec4S(SirfMsg.substring(10,18))
+        val Y = hex2dec4S(SirfMsg.substring(18,26))
+        val Z = hex2dec4S(SirfMsg.substring(26,34))
+        val week = SirfMsg.substring(52,56).toLong(radix = 16)
+        val tow = (SirfMsg.substring(57, 64).toLong(radix = 16) / 100.0).roundToLong()
+        val SVinFix = SirfMsg.substring(64,66).toLong(radix = 16)
+//        Log.i("Sirf MID 2",SirfMsg)
+//        Log.i("Sirf MID 2","X=$X - Y=$Y - Z=$Z - week=$week - tow=$tow -SVinFix=$SVinFix")
         return listOf<Long>(X, Y, Z, week, tow, SVinFix)
     }
 }
@@ -94,7 +92,7 @@ public fun String?.indexesOf(substr: String, ignoreCase: Boolean = true): List<I
 public fun hex2dec4S( input_args: String ): Long {
 //    hex2dec4S converte uma string hexadecimal negativa de 4 bits em um numero decimal
 
-    if (input_args[1].equals("F")) {
+    if (input_args[0].toString().equals("F", true)) {
         return (input_args.toLong(radix = 16) - "FFFFFFFF".toLong(radix = 16) - 1)
     }
     else {
