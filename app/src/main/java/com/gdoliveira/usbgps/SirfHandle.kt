@@ -1,17 +1,19 @@
 package com.gdoliveira.usbgps
 
 import android.util.Log
-import kotlin.math.roundToLong
+import java.lang.Double
+import kotlin.math.round
 
 class SirfHandle() {
     var msgRec: String? = null
     var byteArrayReceived: ByteArray? = null
 
 
-    fun msgReceived(rec: String): Pair<List<String>, List<Long>?> {
+    fun msgReceived(rec: String): Triple<List<String>, List<Any>?, List<Any>?> {
 //        byteArrayReceived = byteArrayReceived?.plus(rec)
         var msgList = arrayListOf<String>()
-        var data_msg2: List<Long>? = null
+        var data_msg2: List<Any>? = null
+        var data_msg28: List<Any>? = null
         msgRec += rec
 
         while (true){
@@ -36,8 +38,8 @@ class SirfHandle() {
                         "02" -> {
                             data_msg2 = msg2_parser(newMsg)
                         }
-                        "28" -> {
-
+                        "1c" -> {
+                            data_msg28 = msg28_parser(newMsg)
                         }
 
                     }
@@ -52,7 +54,7 @@ class SirfHandle() {
             }
         }
 
-        return Pair(msgList, data_msg2)
+        return Triple(msgList, data_msg2, data_msg28)
 
     }
 
@@ -66,16 +68,42 @@ class SirfHandle() {
         }
     }
 
-    fun msg2_parser(SirfMsg: String): List<Long>{
+    fun msg2_parser(SirfMsg: String): List<Any>{
         val X = hex2dec4S(SirfMsg.substring(10,18))
         val Y = hex2dec4S(SirfMsg.substring(18,26))
         val Z = hex2dec4S(SirfMsg.substring(26,34))
         val week = SirfMsg.substring(52,56).toLong(radix = 16)
-        val tow = (SirfMsg.substring(57, 64).toLong(radix = 16) / 100.0).roundToLong()
+        val tow = SirfMsg.substring(57, 64).toLong(radix = 16) / 100.0
         val SVinFix = SirfMsg.substring(64,66).toLong(radix = 16)
+        val CH1 = SirfMsg.substring(66,68).toLong(radix = 16)
+        val CH2 = SirfMsg.substring(68,70).toLong(radix = 16)
+        val CH3 = SirfMsg.substring(70,72).toLong(radix = 16)
+        val CH4 = SirfMsg.substring(72,74).toLong(radix = 16)
+        val CH5 = SirfMsg.substring(74,76).toLong(radix = 16)
+        val CH6 = SirfMsg.substring(76,78).toLong(radix = 16)
+        val CH7 = SirfMsg.substring(78,80).toLong(radix = 16)
+        val CH8 = SirfMsg.substring(80,82).toLong(radix = 16)
+        val CH9 = SirfMsg.substring(82,84).toLong(radix = 16)
+        val CH10 = SirfMsg.substring(84,86).toLong(radix = 16)
+        val CH11= SirfMsg.substring(86,88).toLong(radix = 16)
+        val CH12 = SirfMsg.substring(88,90).toLong(radix = 16)
 //        Log.i("Sirf MID 2",SirfMsg)
 //        Log.i("Sirf MID 2","X=$X - Y=$Y - Z=$Z - week=$week - tow=$tow -SVinFix=$SVinFix")
-        return listOf<Long>(X, Y, Z, week, tow, SVinFix)
+        return listOf<Any>(X, Y, Z, week, tow, SVinFix)
+    }
+
+    fun msg28_parser(SirfMsg: String): List<Any>{
+        val Channel = SirfMsg.substring(10,12).toLong(radix = 16)
+        val TimeTag = SirfMsg.substring(12,20).toLong(radix = 16)
+        val PRN = SirfMsg.substring(20,22).toLong(radix = 16)
+        val GPS_STime = Double.longBitsToDouble( parseUnsignedHex( invSirfDbl(SirfMsg.substring(22,38) ) ) )
+        val tow = round(GPS_STime)
+        val PD = Double.longBitsToDouble( parseUnsignedHex( invSirfDbl(SirfMsg.substring(38,54) ) ) )
+        val Cfreq = invSirfSgl(SirfMsg.substring(54,62)).toLong(radix = 16)
+        val Cfase = Double.longBitsToDouble( parseUnsignedHex( invSirfDbl(SirfMsg.substring(62,78) ) ) )
+//        Log.i("Sirf MID 28",SirfMsg)
+//        Log.i("Sirf MID 28","Channel=$Channel, TimeTag=$TimeTag, PRN=$PRN, GPS_STime=$GPS_STime, tow=$tow, PD=$PD, Cfreq=$Cfreq, Cfase=$Cfase")
+        return listOf<Any>(Channel, TimeTag, PRN, GPS_STime, tow, PD, Cfreq, Cfase)
     }
 }
 
@@ -98,4 +126,21 @@ public fun hex2dec4S( input_args: String ): Long {
     else {
         return input_args.toLong(radix = 16)
     }
+}
+
+private fun invSirfSgl( a: String ): String {
+//INVSIRFSGL Inverte a a variavel 4 Sgl do Sirf Binary Protocol
+    return a.substring(6,8) + a.substring(4,6) + a.substring(2,4) + a.substring(0,2)
+}
+
+private fun invSirfDbl( a: String ): String {
+//INVSIRFDBL Inverte a a variavel 8 Dbl do Sirf Binary Protocol
+    return a.substring(8,16) + a.substring(0,8)
+}
+
+fun parseUnsignedHex(text: String): Long {
+    return if (text.length == 16) {
+        (parseUnsignedHex(text.substring(0, 1)) shl 60
+                or parseUnsignedHex(text.substring(1)))
+    } else text.toLong(16)
 }

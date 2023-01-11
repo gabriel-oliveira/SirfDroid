@@ -32,7 +32,8 @@ class MainActivity : AppCompatActivity() {
     var tcpServer: TcpServer? = null
     var sirfHandle = SirfHandle()
     var receivedMsgsId = arrayListOf<Int>()
-    var data_msg2: List<Long>? = null
+    var data_msg2: List<Any>? = null
+    var data_msg28: List<Any>? = null
 
     private val ACTION_USB_PERMISSION = "com.gdoliveira.usbgps.USB_PERMISSION"
 
@@ -214,7 +215,7 @@ class MainActivity : AppCompatActivity() {
                     }
                     "SIRF 115200" -> {
                         msg = rec.toHexString()
-                        var (msgList, msg2) = sirfHandle.msgReceived(msg)
+                        var (msgList, msg2, msg28) = sirfHandle.msgReceived(msg)
                         msgList.forEach {
 //                            Log.i("GPS", it)
                             if (it.toInt(16) !in receivedMsgsId) {
@@ -268,7 +269,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun updateCoordTextView(data: List<Long>?){
+    private fun updateCoordTextView(data: List<Any>?){
 
         if (data != null) {
             val coordXTextView: TextView = findViewById(R.id.textView5)
