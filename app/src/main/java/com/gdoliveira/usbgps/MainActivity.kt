@@ -29,7 +29,7 @@ class MainActivity : AppCompatActivity() {
     var m_device: UsbDevice? = null
     var m_serial: UsbSerialDevice? = null
     var m_connection: UsbDeviceConnection? = null
-    var tcpServer: TcpServer? = null
+    var tcpServer = TcpServer()
     var receivedMsgsId = arrayListOf<Int>()
 
     val sirfHandle = object: SirfHandle() {
@@ -49,6 +49,14 @@ class MainActivity : AppCompatActivity() {
                     weekTextView.text = data!![3].toString()
                     towTextView.text = data!![4].toString()
                     svinfixTextView.text = data!![5].toString()
+                }
+            }
+        }
+
+        override fun sendRTCMmsg(msg: String) {
+            CoroutineScope(IO).launch {
+                if (tcpServer.isAlive) {
+                    tcpServer.sendString(msg)
                 }
             }
         }
@@ -90,6 +98,18 @@ class MainActivity : AppCompatActivity() {
         val togButton: ToggleButton = findViewById(R.id.toggleButton)
         val changeButton: Button = findViewById(R.id.buttonChangeProtocol)
         val navMsgButton: Button = findViewById(R.id.button)
+        val tcpButton: ToggleButton = findViewById(R.id.toggleButton2)
+        tcpButton.setOnCheckedChangeListener { _, isChecked ->
+            if (isChecked) {
+                CoroutineScope(IO).launch {
+                    tcpServer!!.startServer()
+                }
+            } else {
+                if (tcpServer!!.isAlive) {
+                    tcpServer!!.stopServer()
+                }
+            }
+        }
 
 //        when (togButton.text as String) {
 //            "NMEA 4800" -> {
@@ -103,8 +123,6 @@ class MainActivity : AppCompatActivity() {
 //            }
 //        }
 
-        // TCP SERVER
-        startTcpServer()
 
         changeButton.setOnClickListener {
             val protocol: String = togButton.text as String
@@ -205,12 +223,12 @@ class MainActivity : AppCompatActivity() {
         CoroutineScope(IO).launch { readSyncData(protocol) }
     }
 
-    private fun startTcpServer() {
-        CoroutineScope(IO).launch {
-            tcpServer = TcpServer()
-            tcpServer!!.startServer()
-        }
-    }
+//    private fun startTcpServer() {
+//        CoroutineScope(IO).launch {
+//            tcpServer = TcpServer()
+//            tcpServer!!.startServer()
+//        }
+//    }
 
     private fun readSyncData(protocol: String) {
 
@@ -228,9 +246,12 @@ class MainActivity : AppCompatActivity() {
                 val rec = ByteArray(n)
                 buf.copyInto(rec,0,0,n)
 
+//                tcpServer.sendData(buf,n)
+
                 when (protocol) {
                     "NMEA 4800" -> {
                         msg = String(rec)
+//                        tcpServer.sendString(msg)
                     }
                     "SIRF 115200" -> {
                         msg = rec.toHexString()
@@ -248,10 +269,10 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
 
-                if (tcpServer!!.isAlive) {
-//                    tcpServer!!.sendData(rec,n)
-                    tcpServer!!.sendString(msg)
-                }
+//                if (tcpServer!!.isAlive) {
+////                    tcpServer!!.sendData(rec,n)
+//                    tcpServer!!.sendString(msg)
+//                }
 
                 CoroutineScope(Main).launch {
 //                    Log.i("GPS", "Len: ${n} - msg: ${msg} ")

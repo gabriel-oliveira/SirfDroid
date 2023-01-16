@@ -83,12 +83,16 @@ class TcpServer {
     }
 
     fun sendData(byteArray: ByteArray,n: Int){
-        dataOutputStream!!.write(byteArray,0,n)
-        dataOutputStream!!.flush()
+        if (isAlive) {
+            dataOutputStream!!.write(byteArray, 0, n)
+            dataOutputStream!!.flush()
+        }
     }
 
     fun sendString(s: String){
-        dataOutputStream!!.writeBytes(s)
-        dataOutputStream!!.flush()
+        if (isAlive) {
+            dataOutputStream!!.writeBytes(s)
+            dataOutputStream!!.flush()
+        }
     }
 }

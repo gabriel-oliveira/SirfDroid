@@ -92,8 +92,9 @@ open class SirfHandle() {
         val CH10 = SirfMsg.substring(84,86).toLong(radix = 16)
         val CH11= SirfMsg.substring(86,88).toLong(radix = 16)
         val CH12 = SirfMsg.substring(88,90).toLong(radix = 16)
-        Log.i("Sirf MID 2",SirfMsg)
-        Log.i("Sirf MID 2","X=$X Y=$Y Z=$Z week=$week tow=$tow SVinFix=$SVinFix")
+//        Log.i("Sirf MID 2",SirfMsg)
+//        Log.i("Sirf MID 2","X=$X Y=$Y Z=$Z week=$week tow=$tow SVinFix=$SVinFix")
+        sendRTCMmsg("Sirf MID2 X=$X Y=$Y Z=$Z week=$week tow=$tow SVinFix=$SVinFix")
         return listOf<Any>(X, Y, Z, week, tow, SVinFix)
     }
 
@@ -106,8 +107,8 @@ open class SirfHandle() {
         val PD = Double.longBitsToDouble( parseUnsignedHex( invSirfDbl(SirfMsg.substring(38,54) ) ) )
         val Cfreq = invSirfSgl(SirfMsg.substring(54,62)).toLong(radix = 16)
         val Cfase = Double.longBitsToDouble( parseUnsignedHex( invSirfDbl(SirfMsg.substring(62,78) ) ) )
-        Log.i("Sirf MID 28",SirfMsg)
-        Log.i("Sirf MID 28","Channel=$Channel TimeTag=$TimeTag PRN=$PRN GPS_STime=$GPS_STime tow=$tow PD=$PD Cfreq=$Cfreq Cfase=$Cfase")
+//        Log.i("Sirf MID 28",SirfMsg)
+//        Log.i("Sirf MID 28","Channel=$Channel TimeTag=$TimeTag PRN=$PRN GPS_STime=$GPS_STime tow=$tow PD=$PD Cfreq=$Cfreq Cfase=$Cfase")
         return listOf<Any>(Channel, TimeTag, PRN, GPS_STime, tow, PD, Cfreq, Cfase)
     }
 
@@ -118,13 +119,16 @@ open class SirfHandle() {
         val Clk_drift = SirfMsg.substring(24,32).toLong(radix = 16)       //Hz
         val Clk_bias = SirfMsg.substring(32,40).toLong(radix = 16)        //ns
         val GPS_Time = SirfMsg.substring(40,48).toLong(radix = 16)
-        Log.i("Sirf MID 7",SirfMsg)
-        Log.i("Sirf MID 7","week=$week tow=$tow SVs=$SVs Clock_Drift=$Clk_drift Clock_Bias $Clk_bias GPS_Time=$GPS_Time")
+//        Log.i("Sirf MID 7",SirfMsg)
+//        Log.i("Sirf MID 7","week=$week tow=$tow SVs=$SVs Clock_Drift=$Clk_drift Clock_Bias $Clk_bias GPS_Time=$GPS_Time")
         return listOf<Any>(week, tow, SVs, Clk_drift, Clk_bias, GPS_Time)
     }
 
-    public open fun updateCoordTextView(data: List<Any>?){
-        // TODO: overide this fun in MainActivity
+    open fun updateCoordTextView(data: List<Any>?){
+        // Override this fun in MainActivity
+    }
+    open fun sendRTCMmsg(msg: String){
+        // Override this fun in MainActivity
     }
 }
 
