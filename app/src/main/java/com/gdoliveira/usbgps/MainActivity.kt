@@ -53,10 +53,10 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        override fun sendRTCMmsg(msg: String) {
+        override fun sendRTCMdata(data: ByteArray) {
             CoroutineScope(IO).launch {
                 if (tcpServer.isAlive) {
-                    tcpServer.sendString(msg)
+                    tcpServer.sendData(data, data.size)
                 }
             }
         }
@@ -105,9 +105,7 @@ class MainActivity : AppCompatActivity() {
                     tcpServer!!.startServer()
                 }
             } else {
-                if (tcpServer!!.isAlive) {
-                    tcpServer!!.stopServer()
-                }
+                tcpServer!!.stopServer()
             }
         }
 
