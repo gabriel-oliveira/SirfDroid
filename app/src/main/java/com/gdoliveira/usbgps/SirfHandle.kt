@@ -12,9 +12,9 @@ open class SirfHandle() {
     fun msgReceived(rec: String): List<String> {
 //        byteArrayReceived = byteArrayReceived?.plus(rec)
         var msgList = arrayListOf<String>()
-        var data_msg2: List<Any>? = null
+//        var data_msg2: List<Any>? = null
         var data_msg7: List<Any>? = null
-        var data_msg28: List<Any>? = null
+//        var data_msg28: List<Any>? = null
         msgRec += rec
 
         while (true){
@@ -37,14 +37,18 @@ open class SirfHandle() {
 
                     when (msgid){
                         "02" -> {
-                            data_msg2 = msg2_parser(newMsg)
+                            val data_msg2 = msg2_parser(newMsg)
                             updateCoordTextView(data_msg2)
+                            sendRTCMdata(msg1006encode(data_msg2[0] as Long,
+                                data_msg2[1] as Long, data_msg2[2] as Long
+                            ))
                         }
                         "07" -> {
-                            data_msg7 = msg7_parser(newMsg)
+                            val data_msg7 = msg7_parser(newMsg)
                         }
                         "1c" -> {
-                            data_msg28 = msg28_parser(newMsg)
+                            val data_msg28 = msg28_parser(newMsg)
+                            sendRTCMdata(msg1001encode(data_msg28, data_msg7))
                         }
 
                     }
@@ -94,7 +98,6 @@ open class SirfHandle() {
         val CH12 = SirfMsg.substring(88,90).toLong(radix = 16)
 //        Log.i("Sirf MID 2",SirfMsg)
 //        Log.i("Sirf MID 2","X=$X Y=$Y Z=$Z week=$week tow=$tow SVinFix=$SVinFix")
-        sendRTCMmsg("Sirf MID2 X=$X Y=$Y Z=$Z week=$week tow=$tow SVinFix=$SVinFix")
         return listOf<Any>(X, Y, Z, week, tow, SVinFix)
     }
 
@@ -127,7 +130,7 @@ open class SirfHandle() {
     open fun updateCoordTextView(data: List<Any>?){
         // Override this fun in MainActivity
     }
-    open fun sendRTCMmsg(msg: String){
+    open fun sendRTCMdata(data: ByteArray){
         // Override this fun in MainActivity
     }
 }
