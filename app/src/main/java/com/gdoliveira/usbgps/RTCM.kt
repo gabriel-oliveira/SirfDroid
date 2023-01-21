@@ -4,7 +4,7 @@ package com.gdoliveira.usbgps
 import android.util.Log
 import java.nio.ByteBuffer
 
-fun msg1006encode(X: Long, Y: Long, Z: Long): ByteArray{ //X Y Z Double ???
+fun msg1006encode(X: Double, Y: Double, Z: Double): ByteArray{
 
     var msg = ByteArray(0)
 
@@ -20,32 +20,56 @@ fun msg1006encode(X: Long, Y: Long, Z: Long): ByteArray{ //X Y Z Double ???
     //Reserved for Galileo Indicator (0) DF024 bit(1) 1
     //Reference-Station Indicator (0) DF141 bit(1) 1
     //Antenna Reference Point ECEF-X DF025 int38 38
-    coordEncode(X)
+    msg += coordEncode(X)
 
     //Single Receiver Oscillator Indicator (0) DF142 bit(1) 1
     //Reserved DF001 (0) bit(1) 1
     //Antenna Reference Point ECEF-Y DF026 int38 38
-    coordEncode(Y)
+    msg += coordEncode(Y)
 
     //Quarter Cycle Indicator (00) DF364 bit(2) 2
     //Antenna Reference Point ECEF-Z DF027 int38 38
-    coordEncode(Z)
+    msg += coordEncode(Z)
 
     //Antenna Height DF028 uint16 16
     msg += byteArrayOf(0b00000000.toByte(), 0b00000000.toByte())
 
-    Log.d("RTCM MSG 1006","Message Size: ${msg.size}")
+//    Log.d("RTCM MSG 1006","Message Size: ${msg.size}") // 21
     //TOTAL 168
 
-//Teste
-//    var b = ByteArray(0)
-//    val c = "D300133ED7D30202980EDEEF34B4BD62AC0941986F33360B98"
-//    c.forEach{
-//        b += it.toString().toInt(16).toByte()
-//    }
-//    return c.decodeHex()
+    return header(1006) + msg + CRC24.crc24gen(header(1006) + msg)
+}
 
-    return header(1006) + msg + CRC24Q(msg)
+fun msg1005encode(X: Double, Y: Double, Z: Double): ByteArray{
+
+    var msg = ByteArray(0)
+
+    //Message Number (“1005”= 0011 1110 1101) DF002 uint12 12
+    //Reference Station ID (2003 = 0111 1101 0011) DF003 uint12 12
+    msg += byteArrayOf(0b00111110.toByte(), 0b11010111.toByte(),0b11010011.toByte())
+
+    //Reserved for ITRF Realization Year (0000 00) DF021 uint6 6
+    //GPS Indicator (1) DF022 bit(1) 1
+    //GLONASS Indicator (0) DF023 bit(1) 1
+    msg += byteArrayOf(0b00000010.toByte())
+
+    //Reserved for Galileo Indicator (0) DF024 bit(1) 1
+    //Reference-Station Indicator (0) DF141 bit(1) 1
+    //Antenna Reference Point ECEF-X DF025 int38 38
+    msg += coordEncode(X)
+
+    //Single Receiver Oscillator Indicator (0) DF142 bit(1) 1
+    //Reserved DF001 (0) bit(1) 1
+    //Antenna Reference Point ECEF-Y DF026 int38 38
+    msg += coordEncode(Y)
+
+    //Quarter Cycle Indicator (00) DF364 bit(2) 2
+    //Antenna Reference Point ECEF-Z DF027 int38 38
+    msg += coordEncode(Z)
+
+//    Log.d("RTCM MSG 1005","Message Size: ${msg.size}")
+
+    return header(1005) + msg + CRC24.crc24gen(header(1005) + msg)
 }
 
 fun msg1001encode(SirfMID28: List<Any>, SirfMID7: List<Any>?): ByteArray {
@@ -65,9 +89,11 @@ fun msg1001encode(SirfMID28: List<Any>, SirfMID7: List<Any>?): ByteArray {
 //    GPS L1 Pseudorange DF011 uint24 24
 //    GPS L1 PhaseRange – L1 Pseudorange DF012 int20 20
 //    GPS L1 Lock time Indicator DF013 uint7 7
+
+    Log.d("RTCM MSG 1001","Message Size: ${msg.size}") // 7
 //    TOTAL 58
 
-    return header(1001) + msg + CRC24Q(msg)
+    return header(1001) + msg + CRC24.crc24gen(header(1001) + msg)
 }
 
 fun header(msgId: Int): ByteArray {
@@ -75,47 +101,43 @@ fun header(msgId: Int): ByteArray {
     var header = ByteArray(0)
     header += 0b11010011.toByte()  //Preamble 8 bits 11010011
     //Reserved 6 bits 000000
+    header += 0b00000000.toByte()
     //Message Length 10 bits Message length in bytes
-//    val len = ByteBuffer.allocate(8)
-//    len.putInt(msg.size * 8) // ???
-//    header += len.array()
     when (msgId) {
+        1005 -> {
+            //len = 19
+            header += 0b00010011.toByte()
+        }
         1006 -> {
-            header += 0b00000011.toByte()
-            header += 0b11101110.toByte()
+            //len = 21
+            header += 0b00010101.toByte()
         }
         1001 -> {
-            header += 0b00000011.toByte()
-            header += 0b11101001.toByte()
+            //    val len = ByteBuffer.allocate(8)
+            //    len.putInt(msg.size * 8) // ???
+            //    header += len.array()
+
+            //len = 16
+            header += 0b00010000.toByte()
         }
-
     }
-
     return header
 }
 
-fun CRC24Q(msg: ByteArray): ByteArray {
-    //CRC  24 bits
-    var crc = ByteArray(0)
-    return crc
-}
 
-fun addZerosLeft(msg: ByteArray, size: Int): ByteArray {
-    return msg
-}
+fun coordEncode(coord: Double): ByteArray { //coord: Double
 
-fun coordEncode(coord: Long): ByteArray { //coord: Double
-
-    var buf = ByteArray(2)
-    var byteCoord = ByteBuffer.allocate(38)
-    var longCoord = (coord * 10000)//.toLong()
+    var byteCoord = ByteBuffer.allocate(8)
+    var longCoord = (coord * 10000).toLong()
 
     if (longCoord < 0) {
-        longCoord = longCoord + 274877906943 + 1 // TODO: ???
+        longCoord += 274877906943 // 0x3F_FFFF_FFFF  38bits
     }
-
     byteCoord.putLong(longCoord)
+    val byteArrayCoord = byteCoord.array().copyOfRange(3,8)
 
-    Log.i("RTCM Coord Encode","Coord: $coord ByteArray: $byteCoord")
-    return buf + byteCoord.array()
+    val debugCoord = byteArrayCoord.toHexString()
+
+//    Log.i("RTCM Coord Encode","Coord: $coord ByteArray: $byteCoord")
+    return byteArrayCoord
 }

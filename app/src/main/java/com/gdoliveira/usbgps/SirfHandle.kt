@@ -39,8 +39,8 @@ open class SirfHandle() {
                         "02" -> {
                             val data_msg2 = msg2_parser(newMsg)
                             updateCoordTextView(data_msg2)
-                            sendRTCMdata(msg1006encode(data_msg2[0] as Long,
-                                data_msg2[1] as Long, data_msg2[2] as Long
+                            sendRTCMdata(msg1006encode(data_msg2[0].toString().toDouble(),
+                                data_msg2[1].toString().toDouble(), data_msg2[2].toString().toDouble()
                             ))
                         }
                         "07" -> {
