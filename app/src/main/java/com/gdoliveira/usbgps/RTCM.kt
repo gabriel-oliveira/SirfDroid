@@ -45,7 +45,7 @@ fun msg1006encode(X: Long, Y: Long, Z: Long): ByteArray{ //X Y Z Double ???
 //    }
 //    return c.decodeHex()
 
-    return header(msg) + msg + CRC24Q(msg)
+    return header(1006) + msg + CRC24Q(msg)
 }
 
 fun msg1001encode(SirfMID28: List<Any>, SirfMID7: List<Any>?): ByteArray {
@@ -67,15 +67,30 @@ fun msg1001encode(SirfMID28: List<Any>, SirfMID7: List<Any>?): ByteArray {
 //    GPS L1 Lock time Indicator DF013 uint7 7
 //    TOTAL 58
 
-    return header(msg) + msg + CRC24Q(msg)
+    return header(1001) + msg + CRC24Q(msg)
 }
 
-fun header(msg: ByteArray): ByteArray {
+fun header(msgId: Int): ByteArray {
 
     var header = ByteArray(0)
-    header += "11010011".toLong(radix = 2).toByte()  //Preamble 8 bits 11010011
+    header += 0b11010011.toByte()  //Preamble 8 bits 11010011
     //Reserved 6 bits 000000
     //Message Length 10 bits Message length in bytes
+//    val len = ByteBuffer.allocate(8)
+//    len.putInt(msg.size * 8) // ???
+//    header += len.array()
+    when (msgId) {
+        1006 -> {
+            header += 0b00000011.toByte()
+            header += 0b11101110.toByte()
+        }
+        1001 -> {
+            header += 0b00000011.toByte()
+            header += 0b11101001.toByte()
+        }
+
+    }
+
     return header
 }
 
@@ -96,7 +111,7 @@ fun coordEncode(coord: Long): ByteArray { //coord: Double
     var longCoord = (coord * 10000)//.toLong()
 
     if (longCoord < 0) {
-        longCoord = longCoord + 274877906943 + 1
+        longCoord = longCoord + 274877906943 + 1 // TODO: ???
     }
 
     byteCoord.putLong(longCoord)
