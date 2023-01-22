@@ -19,7 +19,7 @@ class RTCMUnitTest {
     }
 
     @Test
-    fun rtcm1001_isCorret() {
+    fun rtcm1002_isCorret() {
 
         val c = "D300133ED7D30202980EDEEF34B4BD62AC0941986F33360B98"
 
@@ -28,7 +28,7 @@ class RTCMUnitTest {
         val PD = 2.6391766051384903E7
         val Cfase = 2.639190495792381E7
 
-        val m = msg1001encode(GPS_STime, PRN.toLong(), PD, Cfase).toHexString().uppercase()
+        val m = msg1002encode(GPS_STime, PRN.toLong(), PD, Cfase).toHexString().uppercase()
 
         Assert.assertEquals(c, m)
     }

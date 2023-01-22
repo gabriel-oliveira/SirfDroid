@@ -52,7 +52,7 @@ open class SirfHandle() {
                             val PRN = data_msg28[2]
                             val PD = data_msg28[5]
                             val Cfase = data_msg28[7]
-                            sendRTCMdata(msg1001encode(GPS_STime as kotlin.Double,
+                            sendRTCMdata(msg1002encode(GPS_STime as kotlin.Double,
                                 PRN as Long, PD as kotlin.Double, Cfase as kotlin.Double)
                             )
                         }
