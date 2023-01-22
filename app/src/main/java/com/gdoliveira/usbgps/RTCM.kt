@@ -3,6 +3,9 @@ package com.gdoliveira.usbgps
 
 import android.util.Log
 import java.nio.ByteBuffer
+import kotlin.math.abs
+
+const val c = 299792458
 
 fun msg1006encode(X: Double, Y: Double, Z: Double): ByteArray{
 
@@ -72,25 +75,33 @@ fun msg1005encode(X: Double, Y: Double, Z: Double): ByteArray{
     return header(1005) + msg + CRC24.crc24gen(header(1005) + msg)
 }
 
-fun msg1001encode(SirfMID28: List<Any>, SirfMID7: List<Any>?): ByteArray {
+fun msg1001encode(GPS_STime: Double, PRN: Long, PD: Double, Cfase: Double): ByteArray {
 
     var msg = ByteArray(0)
 
-//    Message Number (e.g.,“1001”= 0011 1110 1001) DF002 uint12 12
-//    Reference Station ID DF003 uint12 12
-//    GPS Epoch Time (TOW) DF004 uint30 30
-//    Synchronous GNSS Flag DF005 bit(1) 1
-//    No. of GPS Satellite Signals Processed DF006 uint5 5
-//    GPS Divergence-free Smoothing Indicator DF007 bit(1) 1
-//    GPS Smoothing Interval DF008 bit(3) 3
+    //Message Number (e.g.,“1001”= 0011 1110 1001) DF002 uint12 12
+    //Reference Station ID DF003 uint12 12
+    msg += byteArrayOf(0b00111110.toByte(), 0b10010000.toByte(),0b00000000.toByte())
+//    GPS Epoch Time (TOW) DF004 uint30 30 // TODO: millisecond
+    val tow = abs(GPS_STime).toLong()
+    msg += ByteBuffer.allocate(8).putLong(tow shl 2).array().copyOfRange(4,8) //32bits
+//    Synchronous GNSS Flag DF005 bit(1) 1 // TODO: 0 - Data can be processed; 1 - Next message will contain observables of the same tow
+//    No. of GPS Satellite Signals Processed DF006 uint5 5 //Number of satellites in the message = 1
+//    GPS Divergence-free Smoothing Indicator (0) DF007 bit(1) 1
+//    GPS Smoothing Interval (000) DF008 bit(3) 3
+    msg += byteArrayOf(0b00010000.toByte())
 //    TOTAL 64
 //    GPS Satellite ID DF009 uint6 6
-//    GPS L1 Code Indicator DF010 bit(1) 1
+      msg += ByteBuffer.allocate(8).putLong(PRN shl 2).array().copyOfRange(7,8)
+//    GPS L1 Code Indicator DF010 (0 - CA) bit(1) 1
 //    GPS L1 Pseudorange DF011 uint24 24
+    //dtr = GPS_STime - tow
+    //C1 = PD - (c * dtr * 1.0e-9);
 //    GPS L1 PhaseRange – L1 Pseudorange DF012 int20 20
+    //dif = (PD - Cfase) - (c * dtr * 1.0e-9)
 //    GPS L1 Lock time Indicator DF013 uint7 7
 
-    Log.d("RTCM MSG 1001","Message Size: ${msg.size}") // 7
+//    Log.d("RTCM MSG 1001","Message Size: ${msg.size}") // 15 -> 16 but add zeros in the end
 //    TOTAL 58
 
     return header(1001) + msg + CRC24.crc24gen(header(1001) + msg)
@@ -117,8 +128,8 @@ fun header(msgId: Int): ByteArray {
             //    len.putInt(msg.size * 8) // ???
             //    header += len.array()
 
-            //len = 16
-            header += 0b00010000.toByte()
+            //len = 15
+            header += 0b00001111.toByte()
         }
     }
     return header
@@ -136,7 +147,7 @@ fun coordEncode(coord: Double): ByteArray { //coord: Double
     byteCoord.putLong(longCoord)
     val byteArrayCoord = byteCoord.array().copyOfRange(3,8)
 
-    val debugCoord = byteArrayCoord.toHexString()
+    //val debugCoord = byteArrayCoord.toHexString()
 
 //    Log.i("RTCM Coord Encode","Coord: $coord ByteArray: $byteCoord")
     return byteArrayCoord
