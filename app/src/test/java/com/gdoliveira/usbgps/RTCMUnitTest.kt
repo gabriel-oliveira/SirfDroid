@@ -21,15 +21,18 @@ class RTCMUnitTest {
     @Test
     fun rtcm1002_isCorret() {
 
-        val c = "D300133ED7D30202980EDEEF34B4BD62AC0941986F33360B98"
+        val c = "d300123ea0000bb3ba40104078403d7859601400005b0de1"
 
         val GPS_STime = 49082.00777058164
         val PRN = 16
         val PD = 2.6391766051384903E7
         val Cfase = 2.639190495792381E7
+//        val Cfase = PD
 
-        val m = msg1002encode(GPS_STime, PRN.toLong(), PD, Cfase).toHexString().uppercase()
-
+        val m = msg1002encode(GPS_STime, PRN.toLong(), PD, Cfase).toHexString().lowercase()
+//        print("msg = RTCMReader.parse(b\"")
+//        m.forEach { print("\\x%02x".format(it)) }
+//        println("\")")
         Assert.assertEquals(c, m)
     }
 }

@@ -3,7 +3,7 @@ package com.gdoliveira.usbgps
 
 import android.util.Log
 import java.nio.ByteBuffer
-import kotlin.math.abs
+import kotlin.math.floor
 import kotlin.math.round
 
 const val c = 299792458
@@ -84,7 +84,7 @@ fun msg1002encode(GPS_STime: Double, PRN: Long, PD: Double, Cfase: Double): Byte
     //Reference Station ID DF003 uint12 12
     msg += byteArrayOf(0b00111110.toByte(), 0b10100000.toByte(),0b00000000.toByte())
 //    GPS Epoch Time (TOW) DF004 uint30 30 // millisecond
-    val tow = abs(GPS_STime).toLong()
+    val tow = floor(GPS_STime).toLong()
     val towMS = tow * 1000
     msg += ByteBuffer.allocate(8).putLong(towMS shl 2).array().copyOfRange(4,8) //32bits
 //    Synchronous GNSS Flag DF005 bit(1) 1 // TODO: 0 - Data can be processed; 1 - Next message will contain observables of the same tow
@@ -102,25 +102,30 @@ fun msg1002encode(GPS_STime: Double, PRN: Long, PD: Double, Cfase: Double): Byte
     val dtr = GPS_STime - tow
     val C1 = PD - (c * dtr)
     val PD_RTCM = round( (C1 % 299792.458) / 0.02 ).toLong()
-    msg += ByteBuffer.allocate(8).putLong(PD_RTCM shl 1).array().copyOfRange(5,8)
+    val dif = PD - Cfase
+
+    if (dif < 0.0){
+        msg += ByteBuffer.allocate(8).putLong( (PD_RTCM shl 1) or 1 ).array().copyOfRange(5,8)
+    } else {
+        msg += ByteBuffer.allocate(8).putLong(PD_RTCM shl 1).array().copyOfRange(5,8)
+    }
 
 //    GPS L1 PhaseRange – L1 Pseudorange DF012 int20 20
 //    GPS L1 Lock time Indicator DF013 uint7 7
     //dif = (PD - Cfase) - (c * dtr * 1.0e-9)
-    val dif = PD - Cfase
     val dif_RTCM = round(dif/0.0005).toLong()
-    val aux = ByteBuffer.allocate(8).putLong(dif_RTCM shl 7).array()
-    msg += ByteBuffer.allocate(8).putLong(dif_RTCM shl 7).array().copyOfRange(3,7) // TODO: 32bits but need to be 28bits
+    msg += ByteBuffer.allocate(8).putLong(dif_RTCM shl 5).array().copyOfRange(5,8) // 24 bits
 
 //    GPS Integer L1 Pseudorange Modulus Ambiguity DF014 uint8 8
-    val amb_RTCM = abs( (C1 / 299792.458) ).toLong()
-    msg += byteArrayOf(amb_RTCM.toByte())
 //    GPS L1 CNR DF015 uint8 8
-    msg += byteArrayOf(0b00000000.toByte())
+    val amb_RTCM = floor( (C1 / 299792.458) ).toLong()
+    msg += ByteBuffer.allocate(8).putLong(amb_RTCM shl 6).array().copyOfRange(6,8) // 16 bits
+    msg += byteArrayOf(0b00000000.toByte()) // + 4bits to complete msg
 
-    val msgSize = msg.size
-//    Log.d("RTCM MSG 1002","Message Size: ${msg.size}") // 15 -> 16 but add zeros in the end
+//    val msgSize = msg.size
+//    Log.d("RTCM MSG 1002","Message Size: ${msg.size}") // 17,25 -> 18 but add zeros in the end
 //    TOTAL 74
+//    Log.d("RTCM MSG 1002","TOW:$towMS PRN:$PRN PD:$PD_RTCM DIF:$dif_RTCM AMB:$amb_RTCM")
 
     return header(1002) + msg + CRC24.crc24gen(header(1002) + msg)
 }
@@ -141,6 +146,10 @@ fun header(msgId: Int): ByteArray {
             //len = 21
             header += 0b00010101.toByte()
         }
+        1002 -> {
+            //len = 15
+            header += 0b00010010.toByte()
+        }
         1001 -> {
             //    val len = ByteBuffer.allocate(8)
             //    len.putInt(msg.size * 8) // ???
@@ -148,6 +157,9 @@ fun header(msgId: Int): ByteArray {
 
             //len = 15
             header += 0b00001111.toByte()
+        }
+        else -> {
+            Log.e("RTCM Server","Error in RTCM Message build! ID $msgId not implemented.")
         }
     }
     return header
