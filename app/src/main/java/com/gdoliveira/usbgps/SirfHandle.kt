@@ -2,19 +2,18 @@ package com.gdoliveira.usbgps
 
 import android.util.Log
 import java.lang.Double
+import kotlin.math.floor
 import kotlin.math.round
 
 open class SirfHandle() {
     var msgRec: String? = null
     var byteArrayReceived: ByteArray? = null
 
-
     fun msgReceived(rec: String): List<String> {
-//        byteArrayReceived = byteArrayReceived?.plus(rec)
+
         var msgList = arrayListOf<String>()
-//        var data_msg2: List<Any>? = null
         var data_msg7: List<Any>? = null
-//        var data_msg28: List<Any>? = null
+        var msgs28: Array<MID28> = arrayOf()//listOf(MID28(0,0,0,0.0,0,0.0,0,0.0))
         msgRec += rec
 
         while (true){
@@ -48,12 +47,20 @@ open class SirfHandle() {
                         }
                         "1c" -> {
                             val data_msg28 = msg28_parser(newMsg)
-                            val GPS_STime = data_msg28[3]
-                            val PRN = data_msg28[2]
-                            val PD = data_msg28[5]
-                            val Cfase = data_msg28[7]
-                            sendRTCMdata(msg1002encode(GPS_STime as kotlin.Double,
-                                PRN as Long, PD as kotlin.Double, Cfase as kotlin.Double) )
+
+                            //need to improve because msg is sent with 1 second delay
+                            // TODO: NOT WORK isEmpty in most of time
+                            if(msgs28.isEmpty()) {
+                                Log.i("MID28","Empty List")
+                                msgs28 += arrayOf(data_msg28.copy())
+                            } else if (data_msg28.tow == msgs28[0].tow) {
+                                Log.i("MID28","Add data")
+                                msgs28 += arrayOf(data_msg28.copy())
+                            } else {
+                                Log.i("MID28","Sending")
+                                sendRTCMdata( msg1002encode( msgs28.toList() ) )
+                                msgs28 = arrayOf(data_msg28.copy())
+                            }
                         }
 
                     }
@@ -106,18 +113,18 @@ open class SirfHandle() {
         return listOf<Any>(X, Y, Z, week, tow, SVinFix)
     }
 
-    fun msg28_parser(SirfMsg: String): List<Any>{
+    fun msg28_parser(SirfMsg: String): MID28{
         val Channel = SirfMsg.substring(10,12).toLong(radix = 16)
         val TimeTag = SirfMsg.substring(12,20).toLong(radix = 16)
         val PRN = SirfMsg.substring(20,22).toLong(radix = 16)
         val GPS_STime = Double.longBitsToDouble( parseUnsignedHex( invSirfDbl(SirfMsg.substring(22,38) ) ) )
-        val tow = round(GPS_STime)
+        val tow = floor(GPS_STime).toLong()
         val PD = Double.longBitsToDouble( parseUnsignedHex( invSirfDbl(SirfMsg.substring(38,54) ) ) )
         val Cfreq = invSirfSgl(SirfMsg.substring(54,62)).toLong(radix = 16)
         val Cfase = Double.longBitsToDouble( parseUnsignedHex( invSirfDbl(SirfMsg.substring(62,78) ) ) )
 //        Log.i("Sirf MID 28",SirfMsg)
 //        Log.i("Sirf MID 28","Channel=$Channel TimeTag=$TimeTag PRN=$PRN GPS_STime=$GPS_STime tow=$tow PD=$PD Cfreq=$Cfreq Cfase=$Cfase")
-        return listOf<Any>(Channel, TimeTag, PRN, GPS_STime, tow, PD, Cfreq, Cfase)
+        return MID28(Channel, TimeTag, PRN, GPS_STime, tow, PD, Cfreq, Cfase)
     }
 
     fun msg7_parser(SirfMsg: String): List<Any>{
@@ -177,3 +184,19 @@ fun parseUnsignedHex(text: String): Long {
                 or parseUnsignedHex(text.substring(1)))
     } else text.toLong(16)
 }
+
+data class MID28(val Channel: Long, val TimeTag: Long, val PRN: Long, val GPS_STime: kotlin.Double,
+                 val tow: Long, val PD: kotlin.Double, val Cfreq: Long, val Cfase: kotlin.Double)
+{
+    fun copy(): MID28 {
+        return MID28(Channel, TimeTag, PRN, GPS_STime, tow, PD, Cfreq, Cfase)
+    }
+}
+    //public var Channel = Channel
+//    public var TimeTag = TimeTag
+//    public var PRN = PRN
+//    public var GPS_STime = GPS_STime
+//    public var tow = tow
+//    public var PD = PD
+//    public var Cfreq = Cfreq
+//    public var Cfase = Cfase
