@@ -8,12 +8,12 @@ import kotlin.math.round
 open class SirfHandle() {
     var msgRec: String? = null
     var byteArrayReceived: ByteArray? = null
+    var msgs28: Array<MID28> = arrayOf()
 
     fun msgReceived(rec: String): List<String> {
 
         var msgList = arrayListOf<String>()
         var data_msg7: List<Any>? = null
-        var msgs28: Array<MID28> = arrayOf()//listOf(MID28(0,0,0,0.0,0,0.0,0,0.0))
         msgRec += rec
 
         while (true){
@@ -47,17 +47,12 @@ open class SirfHandle() {
                         }
                         "1c" -> {
                             val data_msg28 = msg28_parser(newMsg)
-
                             //need to improve because msg is sent with 1 second delay
-                            // TODO: NOT WORK isEmpty in most of time
                             if(msgs28.isEmpty()) {
-                                Log.i("MID28","Empty List")
                                 msgs28 += arrayOf(data_msg28.copy())
                             } else if (data_msg28.tow == msgs28[0].tow) {
-                                Log.i("MID28","Add data")
                                 msgs28 += arrayOf(data_msg28.copy())
                             } else {
-                                Log.i("MID28","Sending")
                                 sendRTCMdata( msg1002encode( msgs28.toList() ) )
                                 msgs28 = arrayOf(data_msg28.copy())
                             }
