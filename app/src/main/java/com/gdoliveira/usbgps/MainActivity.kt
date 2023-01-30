@@ -48,7 +48,16 @@ class MainActivity : AppCompatActivity() {
                     coordZTextView.text = data!![2].toString()
                     weekTextView.text = data!![3].toString()
                     towTextView.text = data!![4].toString()
-                    svinfixTextView.text = data!![5].toString()
+                    val svs: List<Int> = data[5] as List<Int>
+                    var listSV: String = ""
+                    var sizeSV = 0
+                    for (sv in svs) {
+                        if (sv != 0){
+                            listSV += " $sv"
+                            sizeSV += 1
+                        }
+                    }
+                    svinfixTextView.text = "$listSV ($sizeSV)"
                 }
             }
         }
@@ -165,6 +174,18 @@ class MainActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
         }
+
+        val sampleRatePicker: NumberPicker = findViewById(R.id.sampleRatePicker)
+        sampleRatePicker.maxValue = 30
+        sampleRatePicker.minValue = 1
+//        val sampleRateValues = arrayOf("1", "5", "10", "15", "30")
+//        sampleRatePicker.displayedValues = sampleRateValues
+        sampleRatePicker.value = 1
+        sampleRatePicker.setOnValueChangedListener { _, _, _ ->
+            val sampleRateValue = sampleRatePicker.value
+            sirfHandle.samplingRate = sampleRateValue.toInt()
+        }
+
     }
 
 //    override fun onDestroy() {
