@@ -98,8 +98,7 @@ fun msg1002encode(epochData: Epoch): ByteArray {
     satHeaderMsg += byteArrayOf(0b00111110.toByte(), 0b10100000.toByte(),0b00000000.toByte())
 
     //GPS Epoch Time (TOW) DF004 uint30 30 // millisecond
-//    val tow = msgs28[0].tow
-    val towMS = epochData.MID7!!.GPS_Time
+    val towMS = (epochData.MID7!!.tow * 1000).toLong()
     satHeaderMsg += ByteBuffer.allocate(8).putLong(towMS shl 2).array().copyOfRange(4,8) //32bits
 
     //Synchronous GNSS Flag DF005 bit(1) 1
