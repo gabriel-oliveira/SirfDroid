@@ -1,18 +1,22 @@
 package com.gdoliveira.usbgps
 
+import android.Manifest
 import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.content.pm.PackageManager
 import android.hardware.usb.UsbDevice
 import android.hardware.usb.UsbDeviceConnection
 import android.hardware.usb.UsbManager
 import android.os.Bundle
+import android.os.SystemClock
 import android.util.Log
 import android.view.View
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
 import com.felhr.usbserial.UsbSerialDevice
 import com.felhr.usbserial.UsbSerialInterface
 import kotlinx.coroutines.CoroutineScope
@@ -31,6 +35,7 @@ class MainActivity : AppCompatActivity() {
     var m_connection: UsbDeviceConnection? = null
     var tcpServer = TcpServer()
     var receivedMsgsId = arrayListOf<Int>()
+    val rinex = Rinex()
 
     val sirfHandle = object: SirfHandle() {
         override fun updateCoordTextView(data: List<Any>?){
@@ -68,6 +73,10 @@ class MainActivity : AppCompatActivity() {
                     tcpServer.sendData(data, data.size)
                 }
             }
+        }
+
+        override fun epoch2rinex(epoch: Epoch) {
+            rinex.writeEpoch(epoch)
         }
     }
 
@@ -186,6 +195,36 @@ class MainActivity : AppCompatActivity() {
             sirfHandle.samplingRate = sampleRateValue.toInt()
         }
 
+        val rinexChronometer: Chronometer = findViewById(R.id.rinexChronometer)
+        val rinexButton: ToggleButton = findViewById(R.id.rinexToggleButton)
+        rinexButton.setOnCheckedChangeListener { _, isChecked ->
+            if (isChecked) {
+                if (connectedState) {
+                    CoroutineScope(IO).launch {
+                        checkFilePermission()
+                        rinex.start()
+                        rinex.headerBuild(sirfHandle.lastEpoch)
+                    }
+                    rinexChronometer.base = SystemClock.elapsedRealtime()
+                    rinexChronometer.start()
+                } else {
+                    Toast.makeText(this, "Device is not connected with Sirf 115200", Toast.LENGTH_SHORT).show()
+                    rinexButton.toggle()
+                }
+            } else {
+                rinexChronometer.stop()
+                rinex.stop()
+            }
+        }
+
+    }
+
+    fun checkFilePermission(){
+        if (checkSelfPermission( Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(this,
+                    arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.MANAGE_EXTERNAL_STORAGE,
+                        Manifest.permission.READ_EXTERNAL_STORAGE), 1)
+        }
     }
 
 //    override fun onDestroy() {

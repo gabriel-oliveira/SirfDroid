@@ -10,6 +10,7 @@ open class SirfHandle() {
 //    var byteArrayReceived: ByteArray? = null
 //    var msgs28: Array<MID28> = arrayOf()
     var epoch = Epoch(0)
+    var lastEpoch = Epoch(0)
     var samplingRate = 1 //seconds
 
     fun msgReceived(rec: String): List<String> {
@@ -60,7 +61,10 @@ open class SirfHandle() {
                                         sendRTCMdata( msg1006encode( epoch.MID2!!.X.toDouble(),
                                             epoch.MID2!!.Y.toDouble(), epoch.MID2!!.Z.toDouble() ) )
 
+                                        epoch2rinex(epoch)
+
                                         //reinitialize epoch
+                                        lastEpoch = epoch
                                         epoch = Epoch(epoch.MID7!!.tow.toInt() + samplingRate - 1)
 
                                     } else {
@@ -188,6 +192,9 @@ open class SirfHandle() {
         // Override this fun in MainActivity
     }
     open fun sendRTCMdata(data: ByteArray){
+        // Override this fun in MainActivity
+    }
+    open fun epoch2rinex(epoch: Epoch){
         // Override this fun in MainActivity
     }
 }

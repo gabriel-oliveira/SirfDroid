@@ -9,7 +9,7 @@ import kotlin.math.ceil
 import kotlin.math.floor
 import kotlin.math.round
 
-const val c: Long = 299792458      // Light Speed
+const val lightSpeed: Long = 299792458      // Light Speed
 const val f = 1575420000.0   // GPS L1 Frequency
 
 fun msg1006encode(X: Double, Y: Double, Z: Double): ByteArray{
@@ -131,7 +131,7 @@ fun msg1002encode(epochData: Epoch): ByteArray {
 
         //GPS L1 Pseudorange DF011 uint24 24
         val dtr: Double = epochData.MID7!!.Clk_bias * 1E-9
-        val C1 = mid28.PD - (c * dtr)
+        val C1 = mid28.PD - (lightSpeed * dtr)
         val PD_RTCM = round( (C1 % 299792.458) / 0.02 ).toLong()
         satmsg.toAdd( 7, 24,
             ByteBuffer.allocate(8).putLong(PD_RTCM).array().copyOfRange(5,8) )
