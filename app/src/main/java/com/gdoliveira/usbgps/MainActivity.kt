@@ -11,6 +11,7 @@ import android.hardware.usb.UsbDevice
 import android.hardware.usb.UsbDeviceConnection
 import android.hardware.usb.UsbManager
 import android.os.Bundle
+import android.os.Environment
 import android.os.SystemClock
 import android.util.Log
 import android.view.View
@@ -19,23 +20,32 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import com.felhr.usbserial.UsbSerialDevice
 import com.felhr.usbserial.UsbSerialInterface
+import com.google.android.material.textfield.TextInputEditText
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.Dispatchers.Main
 import kotlinx.coroutines.launch
+import java.io.File
 
 
 class MainActivity : AppCompatActivity() {
 
     private var connectedState: Boolean = false
-
     lateinit var m_usbManager: UsbManager
     var m_device: UsbDevice? = null
     var m_serial: UsbSerialDevice? = null
     var m_connection: UsbDeviceConnection? = null
-    var tcpServer = TcpServer()
     var receivedMsgsId = arrayListOf<Int>()
     val rinex = Rinex()
+
+    var tcpServer = object: TcpServer() {
+        override fun setStatus(text: String){
+            CoroutineScope(Main).launch {
+                val tcpStatusText: TextView = findViewById(R.id.textViewStatusTCP)
+                tcpStatusText.text = text
+            }
+        }
+    }
 
     val sirfHandle = object: SirfHandle() {
         override fun updateCoordTextView(data: List<Any>?){
@@ -127,19 +137,6 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-//        when (togButton.text as String) {
-//            "NMEA 4800" -> {
-//                changeButton.append(": to SIRF 115200")
-//            }
-//            "SIRF 115200" -> {
-//                changeButton.append(": to NMEA 4800")
-//            }
-//            else -> {
-//                Log.e("GPS", "Erro ao definir NMEA x Sirf em buttonChangeProtocol")
-//            }
-//        }
-
-
         changeButton.setOnClickListener {
             val protocol: String = togButton.text as String
             if (connectedState) {
@@ -195,14 +192,16 @@ class MainActivity : AppCompatActivity() {
             sirfHandle.samplingRate = sampleRateValue.toInt()
         }
 
+        val stationName: TextInputEditText = findViewById(R.id.textInputEditText)
         val rinexChronometer: Chronometer = findViewById(R.id.rinexChronometer)
         val rinexButton: ToggleButton = findViewById(R.id.rinexToggleButton)
+
         rinexButton.setOnCheckedChangeListener { _, isChecked ->
             if (isChecked) {
                 if (connectedState) {
                     CoroutineScope(IO).launch {
                         checkFilePermission()
-                        rinex.start()
+                        rinex.start(stationName.text.toString())
                         rinex.headerBuild(sirfHandle.lastEpoch)
                     }
                     rinexChronometer.base = SystemClock.elapsedRealtime()
@@ -215,6 +214,20 @@ class MainActivity : AppCompatActivity() {
                 rinexChronometer.stop()
                 rinex.stop()
             }
+
+            val dir = File(Environment.getExternalStorageDirectory(), "RINEX")
+            val listFiles = dir.listFiles()
+            var textListFiles = ""
+            if (!listFiles.isNullOrEmpty()) {
+                for (file in listFiles) {
+                    textListFiles += file.name + " \n\r "
+                }
+            } else {
+                textListFiles = "Error while get list files!"
+            }
+            val resultTextView: TextView = findViewById(R.id.textView)
+            resultTextView.text = textListFiles
+
         }
 
     }

@@ -1,6 +1,6 @@
 package com.gdoliveira.usbgps
 
-import android.util.Log
+//import android.util.Log
 import kotlinx.coroutines.delay
 import java.io.DataInputStream
 import java.io.DataOutputStream
@@ -8,7 +8,7 @@ import java.io.IOException
 import java.net.ServerSocket
 import java.net.Socket
 
-class TcpServer {
+open class TcpServer {
     val PORT = 9876
     val TAG = "TCP"
     var isAlive = false
@@ -24,9 +24,11 @@ class TcpServer {
             if (toStopServer) { break }
             try {
                 serverSocket = ServerSocket(PORT)
-                Log.i("TCP", "Waiting for TCP connections at: $serverSocket")
+                setStatus("Status: Aguardando conexão")
+//                Log.i("TCP", "Waiting for TCP connections at: $serverSocket")
                 socket = serverSocket!!.accept()
-                Log.i("TCP", "New client: $socket")
+                setStatus("Status: Nova conexão $socket")
+//                Log.i("TCP", "New client: $socket")
 
                 isAlive = true
 
@@ -42,7 +44,8 @@ class TcpServer {
                             val n: Int? = dataInputStream!!.read(buf)
                             val rec = ByteArray(n!!)
                             buf.copyInto(rec,0,0,n)
-                            Log.i(TAG, "Received: " + String(rec))
+//                            Log.i(TAG, "Received: " + String(rec))
+                            setStatus("Msg recebida: ${String(rec)}")
 
     //                        dataOutputStream!!.writeUTF("Received: " + String(rec))
                         }
@@ -80,11 +83,14 @@ class TcpServer {
     }
 
     fun stopConnection() {
-        dataOutputStream!!.close()
-        dataInputStream!!.close()
-        socket?.close()
+        if (socket != null) {
+            socket?.close()
+            dataOutputStream!!.close()
+            dataInputStream!!.close()
+        }
         serverSocket?.close()
         isAlive = false
+        setStatus("Status: Offline")
     }
 
     fun stopServer(){
@@ -104,14 +110,18 @@ class TcpServer {
         }
     }
 
-    fun sendString(s: String){
-        if (isAlive) {
-            try {
-                dataOutputStream!!.writeBytes(s)
-                dataOutputStream!!.flush()
-            } catch (e: IOException){
-                stopConnection()
-            }
-        }
+//    fun sendString(s: String){
+//        if (isAlive) {
+//            try {
+//                dataOutputStream!!.writeBytes(s)
+//                dataOutputStream!!.flush()
+//            } catch (e: IOException){
+//                stopConnection()
+//            }
+//        }
+//    }
+
+    open fun setStatus(text: String) {
+        //Override in MainActivity
     }
 }

@@ -4,15 +4,22 @@ import android.util.Log
 import java.io.File
 import kotlin.math.floor
 import android.os.Environment.getExternalStorageDirectory
+import java.time.Duration
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.LocalTime
+import java.time.Period
+
+const val DIRECTORY = "RINEX"
 
 class Rinex(){
 
     private var rfile: File? = null
     var isStarted = false
 
-    fun start(){
+    fun start(stationName: String){
 
-        val dir = File(getExternalStorageDirectory(), "RINEX")
+        val dir = File(getExternalStorageDirectory(), DIRECTORY)
 
         if (!dir.isDirectory){
             if (!dir.mkdirs()){
@@ -22,18 +29,8 @@ class Rinex(){
 
         if (!isStarted) {
 
-            var i = 1
-            while (true) {
-                rfile = File(dir.absolutePath, "teste$i.txt")
-
-                if (!rfile!!.isFile) {
-                    rfile!!.createNewFile()
-                    break
-                } else {
-                    i += 1
-                }
-            }
-
+            checkFileName(stationName)
+            rfile!!.createNewFile()
             isStarted = true
 
         } else {
@@ -108,19 +105,16 @@ class Rinex(){
 
         for (msg28 in msgs28) {
 
-            var C1 = ""
-            var L1 = ""
-
             val Phase = msg28.Cfase
             val PD = msg28.PD
 
-            L1 = if (Phase != 0.0) {
+            val L1 = if (Phase != 0.0) {
                 "%16.3f".format( (Phase / lightSpeed - epoch.MID7!!.Clk_drift * 1.0e-9) * f )
             } else {
                 "%16s".format("")
             }
 
-            C1 = if ( PD != 0.0 ) {
+            val C1 = if ( PD != 0.0 ) {
                 "%14.3f".format( (PD - (lightSpeed * epoch.MID7!!.Clk_drift * 1.0e-9) ) )
             } else {
                 "%14s".format("")
@@ -142,7 +136,7 @@ class Rinex(){
         val c: Double = floor((b - 122.1) / 365.25)
         val d: Double = floor(365.25 * c)
         val e: Double = floor((b - d) / 30.6001)
-        val f: Double = jd + 0.5
+//        val f: Double = jd + 0.5
         val day: Double = b - d - floor(30.6001 * e)
         val month: Double = e - 1.0 - ( 12.0 * floor(e / 14.0) )
         val year: Double = c - 4715.0 - floor((7.0 + month) / 10.0)
@@ -155,6 +149,52 @@ class Rinex(){
         sec -= min * 60.0
 
         return "%3.0f%3.0f%3.0f%3.0f%3.0f%11.7f".format( (year - 2000.0), month, day, hour, min, sec )
+    }
+
+    fun tow2dayOfYear(week: Long, tow: Long): Int{
+
+        val initGPSTime = LocalDateTime.of(1980,1,6,0,0)
+        val GPSTime = initGPSTime.plusDays(week * 7).plusSeconds(tow)
+
+        return GPSTime.dayOfYear
+
+    }
+
+    fun checkFileName(stationName: String) {
+
+        val stationPartOfFileName = if (stationName.length > 4) {
+            stationName.substring(0, 4).uppercase()
+        } else if (stationName.isEmpty()) {
+            "SIRF"
+        } else if (stationName.length in 1..4) {
+            stationName + IntArray(4 - stationName.length){ _ -> 0}.joinToString("")
+        } else {
+            stationName.uppercase()
+        }
+
+        val datePartOfFileName = "%03d0.%02dO".format(LocalDate.now().dayOfYear, LocalDate.now().year - 2000)
+        var fileName = stationPartOfFileName + datePartOfFileName
+
+        val dir = File(getExternalStorageDirectory(), DIRECTORY)
+
+        var i = 1
+        while (true) {
+
+            rfile = File(dir.absolutePath, fileName)
+
+            if (!rfile!!.isFile) {
+
+                break
+
+            } else {
+
+                val n = i.toString()
+                fileName = stationPartOfFileName.substring(0,4 - n.length) + n + datePartOfFileName
+                i += 1
+
+            }
+        }
+
     }
 
 }

@@ -14,4 +14,10 @@ class RinexUnitTest {
             rinex.tgps2date(2246.0,576638.02) )
 
     }
+
+    @Test
+    fun dayOfYear_isCorret(){
+        val rinex = Rinex()
+        assertEquals(33, rinex.tow2dayOfYear(2247, 345601))
+    }
 }
