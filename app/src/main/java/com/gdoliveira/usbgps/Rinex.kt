@@ -80,13 +80,13 @@ class Rinex(){
         write("     1.000                                                  INTERVAL\n")
         write("  20%s    %2s    %2s    %2s    %2s   %10s                 TIME OF FIRST OBS\n".format(
             firstObs[1],firstObs[2],firstObs[3],firstObs[4],firstObs[5],firstObs[6]).replace(",",".") )
-        write("                                                            END OF HEADER")
+        write("                                                            END OF HEADER\n")
 
     }
 
     fun writeEpoch(epoch: Epoch){
 
-        write( "\n%s  0".format( tgps2date( epoch.MID7!!.week.toDouble(), epoch.MID7!!.tow ) ).replace(",",".") )
+        write( "%s  0".format( tgps2date( epoch.MID7!!.week.toDouble(), epoch.MID7!!.tow ) ).replace(",",".") )
 
         write( "%3d".format( epoch.MID2!!.SVinFix ) )
 
@@ -109,13 +109,13 @@ class Rinex(){
             val PD = msg28.PD
 
             val L1 = if (Phase != 0.0) {
-                "%16.3f".format( (Phase / lightSpeed - epoch.MID7!!.Clk_drift * 1.0e-9) * f )
+                "%16.3f".format( (Phase / lightSpeed - epoch.MID7!!.Clk_bias * 1.0e-9) * f )
             } else {
                 "%16s".format("")
             }
 
             val C1 = if ( PD != 0.0 ) {
-                "%14.3f".format( (PD - (lightSpeed * epoch.MID7!!.Clk_drift * 1.0e-9) ) )
+                "%14.3f".format( (PD - (lightSpeed * epoch.MID7!!.Clk_bias * 1.0e-9) ) )
             } else {
                 "%14s".format("")
             }
@@ -123,6 +123,8 @@ class Rinex(){
             write( "\n%14s%16s".format(C1, L1).replace(",",".") )
 
         }
+
+        write("\n")
 
     }
 
