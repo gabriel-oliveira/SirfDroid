@@ -4,11 +4,11 @@ plugins {
 }
 
 android {
-    namespace 'com.gdoliveira.usbgps'
+    namespace 'com.gdoliveira.sirfdroid'
     compileSdk 32
 
     defaultConfig {
-        applicationId "com.gdoliveira.usbgps"
+        applicationId "com.gdoliveira.sirfdroid"
         minSdk 29
         targetSdk 32
         versionCode 1
